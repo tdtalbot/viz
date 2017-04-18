@@ -1,6 +1,6 @@
 "use strict"
 
-var Stomp = require('stomp-client');
+var Stomp = require('stompjs');
 
 var httpPort = 8082;
 
@@ -38,11 +38,42 @@ var outputCallback = function(message){
 var gossHost = '172.20.128.20';
 
 //Create client
-var client = Stomp.Stomp.client( "ws://"+gossHost+":61614");
-client.heartbeat.incoming=0;
-client.heartbeat.outgoing=0;
 
-client.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
+var stompClient;
+var stompStatus = false;
+
+var stompSuccessCallback = function (frame) {
+    stompStatus = true;
+    console.log('STOMP: Connection successful');
+	
+	stompClient.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
+	console.log(stompClient.subscriptions);
+
+};
+var stompFailureCallback = function (error) {
+    console.log('STOMP: ' + error);
+    setTimeout(stompConnect, 10000);
+    console.log('STOMP: Reconecting in 10 seconds');
+};
+
+function stompConnect() {
+    console.log('STOMP: Attempting connection');
+    // recreate the stompClient to use a new WebSocket
+    stompClient = Stomp.overWS("ws://"+gossHost+':61614');
+	console.log(stompClient);
+	var headers = {};
+    stompClient.connect("system", "manager", stompSuccessCallback, stompFailureCallback);
+	console.log('connected '+stompClient.connected);
+	
+	//stompClient.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
+}
+stompConnect();
+
+//var client = Stomp.client( "ws://"+gossHost+":61614");
+//client.heartbeat.incoming=0;
+//client.heartbeat.outgoing=0;
+
+//client.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
 
 
 
