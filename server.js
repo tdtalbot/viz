@@ -1,5 +1,7 @@
 "use strict"
 
+var Stomp = require('stomp-client');
+
 var httpPort = 8082;
 
 console.log(__dirname);
@@ -9,12 +11,42 @@ var express = require('express'),
 var app = express();
 var server = http.createServer(app);
 var fs = require('fs');
+let timeseriesData = null;
 
 server.listen(httpPort);
 
 app.use(express.static(__dirname));
 app.engine('html', require('ejs').renderFile);
 app.set('views', __dirname);
+
+
+var outputCallback = function(message){
+    //$("#debug").append("Output "+message.body + "\n");
+	console.log('received message '+message.body);
+	if (timeseriesData == null) {
+		timeseriesData = [];
+	}
+	
+	let messageObj = JSON.parse(message.body)
+	if(messageObj.command=='nextTimeStep'){
+		console.log('command timestep');
+		console.log(messageObj.output)
+		timeseriesData = messageObj.output;
+	}
+		
+}
+var gossHost = '172.20.128.20';
+
+//Create client
+var client = Stomp.Stomp.client( "ws://"+gossHost+":61614");
+client.heartbeat.incoming=0;
+client.heartbeat.outgoing=0;
+
+client.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
+
+
+
+
 
 app.get(['/', '/ieee8500'], function(req, res) {
     res.render('index.html');
@@ -172,7 +204,7 @@ function getIeee8500Topology() {
     return topologyJson;
 }
 
-let timeseriesData = null;
+
 let timeseriesIndex = 0;
 
 function getTimeseriesData(filename) {
@@ -428,21 +460,22 @@ function getTimeseriesToPlotSeriesMapping() {
 }
 
 app.get('/data/ieee8500/timeseries', (req, res) => {
+	let json = {};
+    if (timeseriesData != null) {
+		//json = 
+    //    timeseriesData = getAllTimeseriesDataNewFormat();
+    //} else {
 
-    if (timeseriesData == null) {
-        timeseriesData = getAllTimeseriesDataNewFormat();
-    }
+    //if (timeseriesIndex >= timeseriesData.length) {
+    //    timeseriesIndex = 0;
+    //} 
 
-    if (timeseriesIndex >= timeseriesData.length) {
-        timeseriesIndex = 0;
-    } 
-
-    let json = {
+      json = {
         timeseriesToTopologyMapping: getTimeseriesToTopologyMappingNewFormat(),
         timeseriesToPlotSeriesMapping: getTimeseriesToPlotSeriesMappingNewFormat(),
-        data: timeseriesData[timeseriesIndex++]
-    };
-
+        data: timeseriesData
+		};
+	}
     res.json(json);
 });
 
