@@ -61,8 +61,10 @@ function stompConnect() {
     // recreate the stompClient to use a new WebSocket
     stompClient = Stomp.overWS("ws://"+gossHost+':61614');
 	console.log(stompClient);
-	var headers = {};
+	stompClient.heartbeat.incoming=0;
+    stompClient.heartbeat.outgoing=0;
     stompClient.connect("system", "manager", stompSuccessCallback, stompFailureCallback);
+	
 	console.log('connected '+stompClient.connected);
 	
 	//stompClient.subscribe("/topic/goss/gridappsd/fncs/output", outputCallback);
