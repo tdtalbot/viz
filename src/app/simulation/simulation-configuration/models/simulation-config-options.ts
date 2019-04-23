@@ -7,7 +7,7 @@ export const SIMULATION_CONFIG_OPTIONS = {
   "simulation_config": {
     "start_time": "2009-07-21 00:00:00",
     "duration": "120",
-    "simulators": ["GridLAB-D"],
+    "simulators": ["GridLAB-D","DSS"],
     "timestep_frequency": "1000",
     "timestep_increment": "1000",
     "run_realtime": true,
